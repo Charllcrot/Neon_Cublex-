@@ -1,0 +1,174 @@
+<!DOCTYPE html><html><head><title>Neon Cublex</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"icon.png","version":21,"size":325,"properties":{"frames":1,"fps":5}}],"assets":[],"maps":{},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = '2x1' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="compiler.js"></script><script src="parser.js"></script><script src="processor.js"></script><script src="program.js"></script><script src="routine.js"></script><script src="runner.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="transpiler.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+
+function()
+randRange = function(low, high)
+  return (high - low) * random.next() + low
+end
+
+distance = function(x1, y1, x2, y2)
+  local dx = x2 - x1
+  local dy = y2 - y1
+  return sqrt(pow(dx, 2) + pow(dy, 2))
+end
+
+breakgame = function()
+  gameon = false
+end
+
+createEnemy = function(x, y, dx, dy)
+  return object
+    x = x
+    y = y
+    dx = dx
+    dy = dy
+    speed = 2
+  end
+end
+
+resetEnemy = function(e)
+  if e.dy != 0 then
+    if e.dy > 0 then
+      e.y = -100
+    else
+      e.y = 100
+    end
+    e.x = randRange(-195, 195)
+  else
+    if e.dx > 0 then
+      e.x = -195
+    else
+      e.x = 195
+    end
+    e.y = randRange(-100, 100)
+  end
+end
+
+
+init = function()
+  gameon = true
+  points = 0
+  player = object x = 0 y = 0 end
+
+  enemies = [
+    createEnemy(randRange(-195, 195), 100, 0, -1),
+    createEnemy(randRange(-195, 195), -100, 0, 1),
+    createEnemy(-195, randRange(-100, 100), 1, 0),
+    createEnemy(195, randRange(-100, 100), -1, 0)
+  ]
+
+  coin = object
+    x = randRange(-190, 190)
+    y = randRange(-90, 90)
+    width = 10
+    height = 10
+    color = "rgb(255,255,0)"
+  end
+end
+
+update = function()
+  if not gameon then return end
+
+  local speed = 2
+  if keyboard.LEFT and player.x > -190 then player.x -= speed end
+  if keyboard.RIGHT and player.x < 190 then player.x += speed end
+  if keyboard.UP and player.y < 90 then player.y += speed end
+  if keyboard.DOWN and player.y > -90 then player.y -= speed end
+
+  for e in enemies
+    e.x += e.dx * (e.speed + points)
+    e.y += e.dy * (e.speed + points)
+    if abs(e.x) > 195 or abs(e.y) > 100 then resetEnemy(e) end
+    if distance(player.x, player.y, e.x, e.y) < 10 then
+      audio.beep("square tempo 960 volumen 12 span 50 C6 F5 C5 end")
+      breakgame()
+    end
+  end
+
+  if distance(player.x, player.y, coin.x, coin.y) < 10 then
+    audio.beep("square tempo 960 volumen 12 span 50 F5 C6")
+    coin.x = randRange(-190, 190)
+    coin.y = randRange(-90, 90)
+    points += 1
+  end
+end
+
+draw = function()
+  screen.clear()
+  screen.drawRect(player.x, player.y, 10, 10, "rgb(0,85,255)")
+  for e in enemies
+    screen.drawRect(e.x, e.y, 10, 10, "rgb(255,0,0)")
+  end
+  screen.drawRect(coin.x, coin.y, coin.width, coin.height, coin.color)
+  screen.drawText("Points: " + points, -50, 50, 10, "rgb(255,255,255)")
+
+  if not gameon then
+    screen.drawText("Try harder, loser", 0, 0, 25, "rgb(255,255,255)")
+    screen.drawText("Press space to try again!", 0, -30, 10,"rgb(141,141,141)")
+    if keyboard.SPACE then init() end
+  end
+end
+
+end()
+
+
+</script></html>
